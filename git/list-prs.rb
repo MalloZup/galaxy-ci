@@ -29,7 +29,7 @@ prs.each do |pr|
           puts pr_state.statuses[0]["state"]
         rescue NoMethodError
             puts "The PR is not reviewed by the bot"
-            break
+            next
         end
         puts "set to pending"
         # Set the PR to  pending.
