@@ -9,9 +9,9 @@ require 'json'
 
 
 #  create a ~/.netrc file, like this:
-machine api.github.com
-  login MYBOT_USER
-  password MYPASSWORD
+# machine api.github.com
+#   login MYBOT_USER
+#  password MYPASSWORD
 
 # is only on of some login methods
 client = Octokit::Client.new(:netrc => true)
