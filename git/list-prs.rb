@@ -10,7 +10,7 @@ require 'json'
 
 # is only on of some login methods
 client = Octokit::Client.new(:netrc => true)
-$repo = 'SUSE/spacewalk'
+$repo = 'MalloZup/spacewalk'
 
 prs = client.pull_requests($repo, :state => 'open')
 prs.each do |pr|
