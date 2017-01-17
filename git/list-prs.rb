@@ -8,7 +8,8 @@ require 'json'
 # https://developer.github.com/v3/pulls/#list-pull-requests
 
 
-# is only on of some login methods
+# is only on of some other login methods
+# you need the netrc file 
 client = Octokit::Client.new(:netrc => true)
 $repo = 'MalloZup/spacewalk'
 
@@ -23,11 +24,18 @@ prs.each do |pr|
         puts(pr.body)
         # get status
         pr_state = client.status($repo, pr.head.sha)
-        puts "STATUS OF PR IS:  " + pr_state.state
-        puts
-        puts "****************************************************************************"
-        puts "****************************************************************************"
-        #  pending, success, error, or failure.
-        #status = client.create_status($repo, "14ccc24fd574eafac203a3dc8d77da790c6321fa","failure")
-      #  status = client.create_status($repo, pr.head.sha, "pending")
+        begin
+          # when this happen, the pr contain a new unreviewd commit
+          puts pr_state.statuses[0]["state"]
+        rescue NoMethodError
+            puts "The PR is not reviewed by the bot"
+            break
+        end
+        puts "set to pending"
+        # Set the PR to  pending.
+        status = client.create_status($repo, pr.head.sha, "pending")
+
+        # TODO clone the repo, checkout the sha github commit and schedule some stuf
+        
+        # TODO: set the result, failure or success.
 end
