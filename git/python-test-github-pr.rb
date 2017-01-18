@@ -13,7 +13,8 @@ require 'octokit'
 # 2) you need your github prject $spacewalk_dir, to be cloned there.
 #  --> /tmp/spacewalk need to be a git dir
 # 3) you need to run this script in a jenkins 
-
+##
+## 4) you need a user (the netrc user) that can read to the repo that you want to test the prs-automatically
 ## HOW IT WORKS:
 # 1) run this ruby script on jenkins,  get executed each 2-3 min.  
 # 2) FIND OUT  IF a PR is in a unreviewed status, 
