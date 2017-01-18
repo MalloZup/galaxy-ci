@@ -10,7 +10,7 @@ require 'octokit'
 # 1) you need octokit, and netrc gems
 # 1) you need to put the cred. in a ~/.netrc file on the jenkins-worker,
 #  or where you run the tests
-# 2) you need your github prject $spacewalk_dir, to be cloned there.
+# 2) you need your github prject $git_dir, to be cloned there.
 #  --> /tmp/spacewalk need to be a git dir
 # 3) you need to run this script in a jenkins 
 ##
@@ -34,8 +34,8 @@ $description = "pylint checks"
 $target_url = "https://ci.suse.de/view/Manager/view/Manager-Head/job/manager-Head-test-github-pr/#{ENV['JOB_NUMBER']}"
 puts $target_url
  
-# spacewalk_dir is where we have the github repo in our machine
-$spacewalk_dir = '/tmp/spacewalk/'
+# git_dir is where we have the github repo in our machine
+$git_dir = '/tmp/spacewalk/'
 
 ## python specific variables for running a lint test (pylint)
 pylint_files = Array.new
@@ -82,7 +82,7 @@ prs.each do |pr|
 
           puts 
           # 1) check which branch the pr targets
-          Dir.chdir $spacewalk_dir
+          Dir.chdir $git_dir
           check = `git checkout #{pr.base.ref}` 
           update = `git pull origin #{pr.base.ref}` 
           mk_branch = `git checkout -b PR-#{pr.head.ref} origin/#{pr.head.ref}` 
