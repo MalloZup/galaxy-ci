@@ -1,6 +1,16 @@
 #!/usr/bin/ruby
 
 require 'octokit'
+
+
+####### THIS IS ONLY A POK, to show that you can setup multiples context and tests at the same time.
+
+## the most important thing by this script, is showing that you can check if you already runned a test like (python-lint)
+# and then run some java tests. 
+
+# i didn't refractored the code, as the intention was only a pok.
+
+
 ## INPUT:
 # repo to fetch
 repo = 'SUSE/spacewalk'
