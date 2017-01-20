@@ -18,7 +18,7 @@ require 'octokit'
 
 # HOW IT WORKS:
 # 1) run this ruby script on jenkins,  get executed each 2-3 min.
-# 2) Fin out  IF a PR is in a unreviewed status,
+# 2) Find out  If a PR is in a unreviewed status,
 # 3) When the codition happens, then clone the pr src code, i
 # 4) and then execute the tests.
 # 5) update the PR with the results of tests, (failure, or success)
