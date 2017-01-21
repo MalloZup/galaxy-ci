@@ -19,3 +19,9 @@
       numToKeep: 20
       artifactDaysToKeep: -1
       artifactNumToKeep: -1
+
+    builders:
+      - shell: |
+         echo "Job Name: 1"
+         echo "Variable: 2"
+      - shell: echo "3"
