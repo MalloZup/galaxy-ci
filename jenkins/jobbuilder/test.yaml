@@ -1,17 +1,13 @@
-- project:
-    name: /Manager/Manager-Test
-    proj: test
-    jobs:
-      - 'job-jenkins-test'
-
 - job:
-    name: job-jenkins-test
+    # You can append the job in other ex. dir
+    # the job will added here in 2 subdirs
+    name: Starwars/mallozup/JOB-LaFORZASIACONTE
     project-type: freestyle
     defaults: global
     description: 'Do not edit this job through the web!'
     disabled: false
-    display-name: 'Fancy Galaxy test'
-    concurrent: true
+    display-name: 'Amazing, Jobbuider job'
+    concurrent: false
     workspace: /srv/build-area/job-name
     quiet-period: 5
     block-downstream: false
