@@ -1,7 +1,6 @@
 #!/usr/bin/ruby
 
 require 'octokit'
-
 # some doc for accessing the prs attributes.
 # https://developer.github.com/v3/pulls/#list-pull-requests
 
