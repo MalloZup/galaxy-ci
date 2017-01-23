@@ -51,6 +51,7 @@ prs.each do |pr|
   puts("TITLE_PR: #{pr.title}, NR: #{pr.number}")
   puts '=================================='
   # get status
+
   pr_state = client.status(repo, pr.head.sha)
   begin
     # if this array give the ex. then the PR is not reviewed yet.
@@ -98,8 +99,15 @@ prs.each do |pr|
     break
   end
   puts '******************************'
-  puts 'PR is already reviewed by bot'
+  puts 'PR has already passed some tests'
   puts '******************************'
+  # here we can have others description checker
+  next if  pr_state.statuses[0]['description']  == description
+  # WE can have the case that description == JAVA_LINT,
+  # so we need to check that our desc. for the set isn't set
+  if  pr_state.statuses[0]['description']  != description
+     # do tests
+  end
 end
 
 # exit 1 for jenkins  if the test are not good.
