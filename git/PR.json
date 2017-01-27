@@ -1,7 +1,0 @@
-{ 
-"repo" : "https://github.com/MalloZup/galaxy-botkins.git",
-"context" : "python-tests",
-"description" : "pylint checks",
-"target_url" : "https://JENKINS-SERVER",
-"git_dir" : "/tmp/spacewalk/"
-}
