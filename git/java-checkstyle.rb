@@ -57,13 +57,11 @@ prs.each do |pr|
     next if $java_files.any? == false
     if java_files.any? == true
       # pending
-      client.create_status(repo, pr.head.sha, 'pending',
-                         context: context, description: description)
+      client.create_status(repo, pr.head.sha, 'pending', context: context, description: description)
       # do tests
       java_test(pr.base.ref, pr.head.ref)
       # set status
-      client.create_status(repo, pr.head.sha, $j_status,
-                      context: context, description: description)
+      client.create_status(repo, pr.head.sha, $j_status,  context: context, description: description)
       break 
     end
   end
@@ -74,17 +72,10 @@ prs.each do |pr|
   
   next if pr_state.statuses[0]['description']  == description
 
-  if pr_state.statuses[0]['description'] != description || 
-     pr_state.statuses[0]['state'] == 'pending'
-
-     pr_com = client.commit(repo, pr.head.sha)
-     pr_com.files.each do |file|
-       java_files.push(file.filename) if file.filename.include? '.java'
-     end
+  if pr_state.statuses[0]['description'] != description || pr_state.statuses[0]['state'] == 'pending'
+     check_for_files(repo, pr.head.sha, '.java')
      next if $java_files.any? == false
-     client.create_status(repo, pr.head.sha, 'pending',
-                         context: context, description: description)
-     # do tests
+     client.create_status(repo, pr.head.sha, 'pending', context: context, description: description)
      java_test(pr.base.ref, pr.head.ref)
      client.create_status(repo, pr.head.sha, $j_status,
                          context: context, description: description)
