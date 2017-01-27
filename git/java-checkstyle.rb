@@ -10,11 +10,11 @@ target_url = 'https://ci.suse.de/view/Manager/view/Manager-Head/job/' \
              "manager-Head-test-github-pr/#{ENV['JOB_NUMBER']}"
 # git_dir is where we have the github repo in our machine
 $git_dir = '/tmp/spacewalk/'
-
+$comment = "Lint was ok"
 $java_files = []
 context = "java-tests"
 description = "java-checkstyle"
-client = Octokit::Client.new(netrc: true)
+$client = Octokit::Client.new(netrc: true)
 $j_status = 'error'
 
 def java_test(upstream, pr)
@@ -28,7 +28,7 @@ def java_test(upstream, pr)
    puts `git branch`
    `ant resolve-ivy`
    $j_status = 'error' if  $?.exitstatus == false
-   puts `ant -f manager-build.xml checkstyle`
+   $comment = "```" + `ant -f manager-build.xml checkstyle`+  " ```"
    $j_status = 'failure' if  $?.exitstatus == false
    $j_status = 'success' if $?.exitstatus == true
    puts "finish test"
@@ -37,19 +37,24 @@ def java_test(upstream, pr)
 end
 
 def check_for_files(repo, pr, type)
-  pr_com = client.commit(repo, pr)
+  pr_com = $client.commit(repo, pr)
   pr_com.files.each do |file|
     $java_files.push(file.filename) if file.filename.include? type
   end
 end
 
+
+def create_comment(repo, pr, comment)
+  $client.create_commit_comment(repo, pr, comment)
+end
+
 # fetch all PRS
-prs = client.pull_requests(repo, state: 'open')
+prs = $client.pull_requests(repo, state: 'open')
 prs.each do |pr|
   puts '=================================='
   puts("TITLE_PR: #{pr.title}, NR: #{pr.number}")
   puts '=================================='
-  pr_state = client.status(repo, pr.head.sha)
+  pr_state = $client.status(repo, pr.head.sha)
   begin
     puts pr_state.statuses[0]['state']
   rescue NoMethodError
@@ -57,11 +62,13 @@ prs.each do |pr|
     next if $java_files.any? == false
     if java_files.any? == true
       # pending
-      client.create_status(repo, pr.head.sha, 'pending', context: context, description: description)
+      $client.create_status(repo, pr.head.sha, 'pending', context: context, description: description)
       # do tests
       java_test(pr.base.ref, pr.head.ref)
       # set status
-      client.create_status(repo, pr.head.sha, $j_status,  context: context, description: description)
+      $client.create_status(repo, pr.head.sha, $j_status,  context: context, description: description)
+      # create comment
+      create_comment(repo, pr.head.sha, $comment)
       break 
     end
   end
@@ -70,15 +77,16 @@ prs.each do |pr|
   puts '******************************'
   # do some java test, if python check are fine.
   
-  next if pr_state.statuses[0]['description']  == description
-
-  if pr_state.statuses[0]['description'] != description || pr_state.statuses[0]['state'] == 'pending'
+  if pr_state.statuses[0]['description'] != description || pr_state.statuses[0]['state'] == 'pending' || 
+       pr_state.statuses[0]['state'] == 'error'
      check_for_files(repo, pr.head.sha, '.java')
      next if $java_files.any? == false
-     client.create_status(repo, pr.head.sha, 'pending', context: context, description: description)
+     $client.create_status(repo, pr.head.sha, 'pending', context: context, description: description)
      java_test(pr.base.ref, pr.head.ref)
-     client.create_status(repo, pr.head.sha, $j_status,
+     $client.create_status(repo, pr.head.sha, $j_status,
                          context: context, description: description)
+     create_comment(repo, pr.head.sha, $comment)
      break 
   end
+    next if pr_state.statuses[0]['description']  == description
 end
