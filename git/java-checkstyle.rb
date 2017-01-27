@@ -11,7 +11,7 @@ target_url = 'https://ci.suse.de/view/Manager/view/Manager-Head/job/' \
 # git_dir is where we have the github repo in our machine
 $git_dir = '/tmp/spacewalk/'
 
-java_files = []
+$java_files = []
 context = "java-tests"
 description = "java-checkstyle"
 client = Octokit::Client.new(netrc: true)
@@ -36,6 +36,12 @@ def java_test(upstream, pr)
   `git branch -D  PR-#{pr}`
 end
 
+def check_for_files(repo, pr, type)
+  pr_com = client.commit(repo, pr)
+  pr_com.files.each do |file|
+    $java_files.push(file.filename) if file.filename.include? type
+  end
+end
 
 # fetch all PRS
 prs = client.pull_requests(repo, state: 'open')
@@ -47,16 +53,15 @@ prs.each do |pr|
   begin
     puts pr_state.statuses[0]['state']
   rescue NoMethodError
-    pr_com = client.commit(repo, pr.head.sha)
-    pr_com.files.each do |file|
-      java_files.push(file.filename) if file.filename.include? '.java'
-    end
-    next if java_files.any? == false
+    check_for_files(repo, pr.head.sha, '.java')
+    next if $java_files.any? == false
     if java_files.any? == true
+      # pending
       client.create_status(repo, pr.head.sha, 'pending',
                          context: context, description: description)
       # do tests
       java_test(pr.base.ref, pr.head.ref)
+      # set status
       client.create_status(repo, pr.head.sha, $j_status,
                       context: context, description: description)
       break 
@@ -76,7 +81,7 @@ prs.each do |pr|
      pr_com.files.each do |file|
        java_files.push(file.filename) if file.filename.include? '.java'
      end
-     next if java_files.any? == false
+     next if $java_files.any? == false
      client.create_status(repo, pr.head.sha, 'pending',
                          context: context, description: description)
      # do tests
