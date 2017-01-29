@@ -13,8 +13,17 @@ description = 'pyflakes-checkstyle'
 
 # this function merge the pr branch  into target branch,
 # where the author  of pr wanted to submit
-def git_merge_pr_totarget(upstream, pr)
+
+def git_goto_prj_dir()
+  # chech that dir exist, otherwise clone it
+  if File.directory?(@git_dir) == false
+    raise "nodir"
+  end
   Dir.chdir @git_dir
+end
+
+def git_merge_pr_totarget(upstream, pr)
+  git_goto_prj_dir(@git_dir)
   `git checkout #{upstream}`
   `git pull origin #{upstream}`
   `git checkout -b PR-#{pr} origin/#{pr}`
