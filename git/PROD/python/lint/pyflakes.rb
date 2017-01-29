@@ -37,12 +37,22 @@ def pyflakes_test(upstream, pr, repo)
    $comment << " ```"
 end
 
+# this function check only the file of a commit (latest)
+# if we push 2 commits at once, the fist get untracked.
 def check_for_files(repo, pr, type)
   pr_com = $client.commit(repo, pr)
   pr_com.files.each do |file|
     $python_files.push(file.filename) if file.filename.include? type
   end
 end
+
+# this check all files for a pr_number
+def ck_all_files_pr(repo, pr_number,type)
+   files = pull_request_files(repo, pr_number)   
+   files.each do |file|
+    $python_files.push(file.filename) if file.filename.include? type
+end
+
 
 # we put the results on the comment.
 def create_comment(repo, pr, comment)
