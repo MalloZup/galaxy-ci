@@ -2,9 +2,9 @@
 
 require 'octokit'
 # repo to fetch
-repo = 'SUSE/spacewalk'
+repo = 'MalloZup/jaily'
 # git_dir is where we have the github repo in our machine
-@git_dir = '/tmp/spacewalk/'
+@git_dir = '/tmp/jaily'
 @python_files = []
 context = 'python-tests'
 description = 'pyflakes-checkstyle'
@@ -14,18 +14,21 @@ description = 'pyflakes-checkstyle'
 # this function merge the pr branch  into target branch,
 # where the author  of pr wanted to submit
 
-def git_goto_prj_dir()
+def git_goto_prj_dir(repo)
   # chech that dir exist, otherwise clone it
   if File.directory?(@git_dir) == false
-    raise "nodir"
+    Dir.chdir '/tmp'
+    puts 'cloning the project in tmp'
+    `git clone https://github.com/#{repo}.git`
   end
   Dir.chdir @git_dir
 end
 
-def git_merge_pr_totarget(upstream, pr)
-  git_goto_prj_dir(@git_dir)
+def git_merge_pr_totarget(upstream, pr, repo)
+  git_goto_prj_dir(repo)
   `git checkout #{upstream}`
-  `git pull origin #{upstream}`
+  `git fetch origin`
+  # `git pull origin #{upstream}`
   `git checkout -b PR-#{pr} origin/#{pr}`
 end
 
@@ -39,7 +42,7 @@ def run_pyflake(output)
   @python_files.each do |pyfile|
     puts pyfile
     out = `pyflakes #{pyfile}`
-    @j_status = 'failure' if $CHILD_STATUS.exitstatus.nonzero?
+    @j_status = 'failure' if $?.exitstatus.nonzero?
     output.push(out)
   end
 end
@@ -50,7 +53,7 @@ def pyflakes_t(upstream, pr, repo)
   author_pr = pr_com.author.login
   @comment = "@#{author_pr}\n```console\n"
   output = []
-  git_merge_pr_totarget(upstream, pr)
+  git_merge_pr_totarget(upstream, pr, repo)
   run_pyflake(output)
   git_del_pr_branch(upstream, pr)
   output.each { |out| @comment << out }
@@ -69,7 +72,7 @@ end
 
 # this check all files for a pr_number
 def check_for_all_files(repo, pr_number, type)
-  files = pull_request_files(repo, pr_number)
+  files = @client.pull_request_files(repo, pr_number)
   files.each do |file|
     @python_files.push(file.filename) if file.filename.include? type
   end
@@ -98,7 +101,8 @@ prs.each do |pr|
       @client.create_status(repo, pr.head.sha, 'pending',
                             context: context, description: description)
       # do tests
-      pyflakes_t(pr.base.ref, pr.head.sha, repo)
+      #FIXME: wrong, cannot checkout to right branch.
+      pyflakes_t(pr.base.ref, pr.head.sha, repo, #PR_BRANCH_NAME FIXME)
       # set status
       @client.create_status(repo, pr.head.sha, @j_status,
                             context: context, description: description)
