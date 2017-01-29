@@ -10,29 +10,41 @@ context = 'python-tests'
 description = 'pyflakes-checkstyle'
 @client = Octokit::Client.new(netrc: true)
 @j_status = 'success'
-def pyflakes_t(upstream, pr, repo)
-  # get author:
-  pr_com = @client.commit(repo, pr)
-  author_pr = pr_com.author.login
-  @comment = "@#{author_pr}\n"
-  @comment << "```console\n"
-  output = []
+
+# this function merge the pr branch  into target branch,
+# where the author  of pr wanted to submit
+def git_merge_pr_totarget(upstream, pr)
   Dir.chdir @git_dir
   `git checkout #{upstream}`
   `git pull origin #{upstream}`
   `git checkout -b PR-#{pr} origin/#{pr}`
+end
+
+def git_del_pr_branch(upstream, pr)
+  `git checkout #{upstream}`
+  `git branch -D  PR-#{pr}`
+end
+
+# run pyflakes tests.
+def run_pyflake(output)
   @python_files.each do |pyfile|
     puts pyfile
     out = `pyflakes #{pyfile}`
-    @j_status = 'failure' if $?.exitstatus != 0
-    puts out
+    @j_status = 'failure' if $CHILD_STATUS.exitstatus.nonzero?
     output.push(out)
   end
-  `git checkout #{upstream}`
-  `git branch -D  PR-#{pr}`
-  output.each do |out|
-    @comment << out
-  end
+end
+
+def pyflakes_t(upstream, pr, repo)
+  # get author:
+  pr_com = @client.commit(repo, pr)
+  author_pr = pr_com.author.login
+  @comment = "@#{author_pr}\n```console\n"
+  output = []
+  git_merge_pr_totarget(upstream, pr)
+  run_pyflake(output)
+  git_del_pr_branch(upstream, pr)
+  output.each { |out| @comment << out }
   @comment << "great job, no pyflakes failures\n" if @j_status == 'success'
   @comment << ' ```'
 end
@@ -53,7 +65,6 @@ def check_for_all_files(repo, pr_number, type)
     @python_files.push(file.filename) if file.filename.include? type
   end
 end
-
 
 # we put the results on the comment.
 def create_comment(repo, pr, comment)
@@ -76,14 +87,12 @@ prs.each do |pr|
     if @python_files.any? == true
       # pending
       @client.create_status(repo, pr.head.sha, 'pending',
-              context: context,
-              description: description)
+                            context: context, description: description)
       # do tests
       pyflakes_t(pr.base.ref, pr.head.sha, repo)
       # set status
       @client.create_status(repo, pr.head.sha, @j_status,
-              context: context,
-              description: description)
+                            context: context, description: description)
       # create comment
       create_comment(repo, pr.head.sha, @comment)
       break
@@ -97,12 +106,10 @@ prs.each do |pr|
     check_for_all_files(repo, pr.number, '.py')
     next if @python_files.any? == false
     @client.create_status(repo, pr.head.sha, 'pending',
-            context: context,
-            description: description)
+                          context: context, description: description)
     pyflakes_t(pr.base.ref, pr.head.sha, repo)
     @client.create_status(repo, pr.head.sha, @j_status,
-            context: context,
-            description: description)
+                          context: context, description: description)
     create_comment(repo, pr.head.sha, @comment)
     break
   end
