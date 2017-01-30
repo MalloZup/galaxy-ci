@@ -13,7 +13,6 @@ description = 'pyflakes-checkstyle'
 
 # this function merge the pr branch  into target branch,
 # where the author  of pr wanted to submit
-
 def git_goto_prj_dir(repo)
   # chech that dir exist, otherwise clone it
   if File.directory?(@git_dir) == false
@@ -24,14 +23,16 @@ def git_goto_prj_dir(repo)
   Dir.chdir @git_dir
 end
 
-def git_merge_pr_totarget(upstream, pr, repo)
+# merge pr_branch into upstream targeted branch
+def git_merge_pr_totarget(upstream, pr_branch, repo)
   git_goto_prj_dir(repo)
   `git checkout #{upstream}`
   `git fetch origin`
-  # `git pull origin #{upstream}`
-  `git checkout -b PR-#{pr} origin/#{pr}`
+  `git pull origin #{upstream}`
+  `git checkout -b PR-#{pr_branch} origin/#{pr_branch}`
 end
 
+# cleanup the pr_branch(delete it)
 def git_del_pr_branch(upstream, pr)
   `git checkout #{upstream}`
   `git branch -D  PR-#{pr}`
@@ -47,15 +48,16 @@ def run_pyflake(output)
   end
 end
 
-def pyflakes_t(upstream, pr, repo)
+# main function for doing the test
+def pyflakes_t(upstream, pr_sha_com, repo, pr_branch)
   # get author:
-  pr_com = @client.commit(repo, pr)
+  pr_com = @client.commit(repo, pr_sha_com)
   author_pr = pr_com.author.login
   @comment = "@#{author_pr}\n```console\n"
   output = []
-  git_merge_pr_totarget(upstream, pr, repo)
+  git_merge_pr_totarget(upstream, pr_branch, repo)
   run_pyflake(output)
-  git_del_pr_branch(upstream, pr)
+  git_del_pr_branch(upstream, pr_branch)
   output.each { |out| @comment << out }
   @comment << "great job, no pyflakes failures\n" if @j_status == 'success'
   @comment << ' ```'
@@ -101,8 +103,7 @@ prs.each do |pr|
       @client.create_status(repo, pr.head.sha, 'pending',
                             context: context, description: description)
       # do tests
-      #FIXME: wrong, cannot checkout to right branch.
-      pyflakes_t(pr.base.ref, pr.head.sha, repo, #PR_BRANCH_NAME FIXME)
+      pyflakes_t(pr.base.ref, pr.head.sha, repo, pr.head.ref)
       # set status
       @client.create_status(repo, pr.head.sha, @j_status,
                             context: context, description: description)
@@ -120,7 +121,7 @@ prs.each do |pr|
     next if @python_files.any? == false
     @client.create_status(repo, pr.head.sha, 'pending',
                           context: context, description: description)
-    pyflakes_t(pr.base.ref, pr.head.sha, repo)
+    pyflakes_t(pr.base.ref, pr.head.sha, repo, pr.head.ref)
     @client.create_status(repo, pr.head.sha, @j_status,
                           context: context, description: description)
     create_comment(repo, pr.head.sha, @comment)
