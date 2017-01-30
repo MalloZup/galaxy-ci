@@ -54,7 +54,7 @@ def pyflakes_t(upstream, pr_sha_com, repo, pr_branch)
   pr_com = @client.commit(repo, pr_sha_com)
   author_pr = pr_com.author.login
   @comment = "##### py-files analyzed: #{@python_files}\n" 
-  @comment = "@#{author_pr}\n```console\n"
+  @comment << "@#{author_pr}\n```console\n"
   output = []
   git_merge_pr_totarget(upstream, pr_branch, repo)
   run_pyflake(output)
