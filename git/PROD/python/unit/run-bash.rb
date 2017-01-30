@@ -10,6 +10,7 @@ context = 'python-tests'
 description = 'pyflakes-checkstyle'
 @client = Octokit::Client.new(netrc: true)
 @j_status = 'success'
+@bash_file = 'test.sh'
 
 # this function merge the pr branch  into target branch,
 # where the author  of pr wanted to submit
@@ -38,14 +39,11 @@ def git_del_pr_branch(upstream, pr)
   `git branch -D  PR-#{pr}`
 end
 
-# run pyflakes tests.
-def run_pyflake(output)
-  @python_files.each do |pyfile|
-    puts pyfile
-    out = `pyflakes #{pyfile}`
+# run bash script to validate.
+def run_bash(output)
+    out = `sh #{bash_file}`
     @j_status = 'failure' if $?.exitstatus.nonzero?
-    output.push(out)
-  end
+    output.push(out) if $?.exitstatus.nonzero?
 end
 
 # main function for doing the test
@@ -53,14 +51,14 @@ def pyflakes_t(upstream, pr_sha_com, repo, pr_branch)
   # get author:
   pr_com = @client.commit(repo, pr_sha_com)
   author_pr = pr_com.author.login
-  @comment = "##### py-files analyzed:\n #{@python_files}\n"
+  @comment = "##### files analyzed:\n #{@python_files}\n"
   @comment << "@#{author_pr}\n```console\n"
   output = []
   git_merge_pr_totarget(upstream, pr_branch, repo)
-  run_pyflake(output)
+  run_bash(output)
   git_del_pr_branch(upstream, pr_branch)
   output.each { |out| @comment << out }
-  @comment << "great job, no pyflakes failures\n" if @j_status == 'success'
+  @comment << "no functional-test failure, great!\n" if @j_status == 'success'
   @comment << ' ```'
 end
 
