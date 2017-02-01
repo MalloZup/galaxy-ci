@@ -44,7 +44,8 @@ end
 
 # run bash script to validate.
 def run_bash(output)
-    out = `sh #{bash_file}`
+    out = `sh #{@bash_file}`
+    @comment << out
     @j_status = 'failure' if $?.exitstatus.nonzero?
     output.push(out) if $?.exitstatus.nonzero?
 end
