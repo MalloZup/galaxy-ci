@@ -42,9 +42,10 @@ end
 
 parse_option
 # repo to fetch
-repo = 'SUSE/spacewalk'
+repo = @options[:repo]
+
 # git_dir is where we have the github repo in our machine
-@git_dir = '/tmp/spacewalk'
+@git_dir = "/tmp/#{@options[:repo].split('/')[1]}"
 @pr_files = []
 context = 'java-tests'
 description = 'java_checkstyle'
