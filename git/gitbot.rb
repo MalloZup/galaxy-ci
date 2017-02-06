@@ -5,8 +5,17 @@ require 'optparse'
 
 @options = {}
 def parse_option()
-  opt_parser = OptionParser.new do |opt|
-    opt.banner = "Usage: gitbot [OPTIONS]"
+  def raise_verbose_help(msg)
+    puts @opt_parser 
+    puts "***************************************************************\n"
+    raise OptionParser::MissingArgument, msg
+  end
+
+  @opt_parser = OptionParser.new do |opt|
+    opt.banner = "***************************************************************\n"
+                 "Usage: gitbot [OPTIONS] \n" \
+                 "EXAMPLE: gitbot -r MalloZup/gitbot -c \"python-test\" -d \pyflakes_linttest\" -t tests.sh \n"
+
     opt.separator  "Options"
 
     opt.on("-r","--repo REPO","which github repo you want to run test against " \
@@ -29,32 +38,17 @@ def parse_option()
     end
 
     opt.on("-h","--help","help") do
-      puts opt_parser
+      puts @opt_parser 
+      puts "***************************************************************\n"
       exit 0
     end
   end
-  opt_parser.parse!
-  raise OptionParser::MissingArgument, "REPO" if @options[:repo].nil?
-  raise OptionParser::MissingArgument, "CONTEXT" if @options[:context].nil?
-  raise OptionParser::MissingArgument, "DESCRIPTION" if @options[:description].nil?
-  raise OptionParser::MissingArgument, "TEST.sh" if @options[:bash_file].nil?
+  @opt_parser.parse!
+  raise_verbose_help("REPO") if @options[:repo].nil?
+  raise_verbose_help("CONTEXT") if @options[:context].nil?
+  raise_verbose_help("DESCRIPTION") if @options[:description].nil?
+  raise_verbose_help("TEST.sh") if @options[:bash_file].nil?
 end
-
-parse_option
-# repo to fetch
-repo = @options[:repo]
-
-# git_dir is where we have the github repo in our machine
-@git_dir = "/tmp/#{@options[:repo].split('/')[1]}"
-@pr_files = []
-context = 'java-tests'
-description = 'java_checkstyle'
-@target_url = 'https://ci.suse.de/view/Manager/view/Manager-Head/job/' \
-             "manager-Head-prs-java-auto/#{ENV['JOB_NUMBER']}"
-
-@client = Octokit::Client.new(netrc: true)
-@j_status = 'success'
-@bash_file = 'check-style.sh'
 
 # this function merge the pr branch  into target branch,
 # where the author of pr wanted to submit
@@ -128,6 +122,24 @@ end
 def create_comment(repo, pr, comment)
   @client.create_commit_comment(repo, pr, comment)
 end
+
+# get options
+parse_option
+
+# git_dir is where we have the github repo in our machine
+@git_dir = "/tmp/#{@options[:repo].split('/')[1]}"
+@pr_files = []
+repo = @options[:repo]
+context = @options[:context]
+description = @options[:description]
+@bash_file = @options[:bash_file]
+
+# optional
+@target_url = 'https://JENKINS_URL:job/' \
+             "MY_JOB/#{ENV['JOB_NUMBER']}"
+
+@client = Octokit::Client.new(netrc: true)
+@j_status = 'success'
 
 # fetch all PRS
 prs = @client.pull_requests(repo, state: 'open')
