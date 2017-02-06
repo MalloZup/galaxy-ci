@@ -10,11 +10,11 @@ def parse_option()
     puts "***************************************************************\n"
     raise OptionParser::MissingArgument, msg
   end
-
+  name = './gitbot.rb'
   @opt_parser = OptionParser.new do |opt|
-    opt.banner = "***************************************************************\n"
+    opt.banner = "***************************************************************\n" \
                  "Usage: gitbot [OPTIONS] \n" \
-                 "EXAMPLE: gitbot -r MalloZup/gitbot -c \"python-test\" -d \pyflakes_linttest\" -t tests.sh \n"
+                 "EXAMPLE: ======> #{name} -r MalloZup/galaxy-botkins -c \"python-test\" -d \"pyflakes_linttest\" -t /home/mallozup/bin/tests.sh -f \".py\"\n\n"
 
     opt.separator  "Options"
 
@@ -37,6 +37,10 @@ def parse_option()
       @options[:bash_file] = bash_file
     end
 
+    opt.on("-f","--file \'.py\'", "specify the file type of the pr which you want to run the test against (ex .py, .java, .rb  etc)") do |file_type|
+      @options[:file_type] = file_type
+    end
+
     opt.on("-h","--help","help") do
       puts @opt_parser 
       puts "***************************************************************\n"
@@ -44,10 +48,11 @@ def parse_option()
     end
   end
   @opt_parser.parse!
-  raise_verbose_help("REPO") if @options[:repo].nil?
-  raise_verbose_help("CONTEXT") if @options[:context].nil?
-  raise_verbose_help("DESCRIPTION") if @options[:description].nil?
-  raise_verbose_help("TEST.sh") if @options[:bash_file].nil?
+  raise_verbose_help('REPO') if @options[:repo].nil?
+  raise_verbose_help('CONTEXT') if @options[:context].nil?
+  raise_verbose_help('DESCRIPTION') if @options[:description].nil?
+  raise_verbose_help('TEST.sh') if @options[:bash_file].nil?
+  raise_verbose_help('TYPE FILE') if @options[:file_type].nil?
 end
 
 # this function merge the pr branch  into target branch,
@@ -97,8 +102,8 @@ def pr_test(upstream, pr_sha_com, repo, pr_branch)
   run_bash(output)
   git_del_pr_branch(upstream, pr_branch)
   output.each { |out| @comment << out }
-  @comment << "no java checkstyle failures, great job!\n" if @j_status == 'success'
-  @comment << ' ```'
+  @comment << " ```\n"
+  @comment << "#{@compliment_msg}\n" if @j_status == 'success'
 end
 
 # this function check only the file of a commit (latest)
@@ -129,10 +134,13 @@ parse_option
 # git_dir is where we have the github repo in our machine
 @git_dir = "/tmp/#{@options[:repo].split('/')[1]}"
 @pr_files = []
+@file_type = @options[:file_type]
 repo = @options[:repo]
 context = @options[:context]
 description = @options[:description]
 @bash_file = @options[:bash_file]
+@compliment_msg = "no failures found for #{@file_type}! Great job"
+
 
 # optional
 @target_url = 'https://JENKINS_URL:job/' \
@@ -143,6 +151,8 @@ description = @options[:description]
 
 # fetch all PRS
 prs = @client.pull_requests(repo, state: 'open')
+# exit if repo has no prs"
+puts "no Pull request OPEN on the REPO!" if prs.any? == false
 prs.each do |pr|
   puts '=================================='
   puts("TITLE_PR: #{pr.title}, NR: #{pr.number}")
@@ -152,7 +162,7 @@ prs.each do |pr|
   begin
     puts commit_state.statuses[0]['state']
   rescue NoMethodError
-    check_for_all_files(repo, pr.number, '.java')
+    check_for_all_files(repo, pr.number, @file_type)
     next if @pr_files.any? == false
     if @pr_files.any? == true
       # pending
@@ -173,7 +183,8 @@ prs.each do |pr|
   puts '******************************'
   if commit_state.statuses[0]['description'] != description ||
      commit_state.statuses[0]['state'] == 'pending'
-    check_for_all_files(repo, pr.number, '.java')
+
+    check_for_all_files(repo, pr.number, @file_type)
     next if @pr_files.any? == false
     @client.create_status(repo, pr.head.sha, 'pending',
                           context: context, description: description, target_url: @target_url)
