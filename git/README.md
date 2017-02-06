@@ -1,6 +1,6 @@
-## gitbot.rb
+## generic
 
-This is the most generic script.
+This dir contains the most generic script that will run the opensource code
 
 ## PRod dir
 
