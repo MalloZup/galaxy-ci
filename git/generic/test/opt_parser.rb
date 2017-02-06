@@ -10,7 +10,17 @@ class SimpleTest < Minitest::Test
     ex = assert_raises OptionParser::MissingArgument do
       OptParser.get_options
     end
+    puts OptParser.get
     assert_equal('missing argument: REPO', ex.message)
   end
-
+ 
+  def test_partial_import
+    OptParser.set(':repo', 'gino')
+    ex = assert_raises OptionParser::MissingArgument do
+      OptParser.get_options
+    end
+    puts OptParser.get
+    assert_equal('missing argument: CONTEXT', ex.message)
+ 
+  end
 end

@@ -4,57 +4,6 @@ require 'octokit'
 require 'optparse'
 require_relative "lib/opt_parser" 
 
-@options = {}
-def parse_option()
-  def raise_verbose_help(msg)
-    puts @opt_parser 
-    puts "***************************************************************\n"
-    raise OptionParser::MissingArgument, msg
-  end
-  name = './gitbot.rb'
-  @opt_parser = OptionParser.new do |opt|
-    opt.banner = "***************************************************************\n" \
-                 "Usage: gitbot [OPTIONS] \n" \
-                 "EXAMPLE: ======> #{name} -r MalloZup/galaxy-botkins -c \"python-test\" -d \"pyflakes_linttest\" -t /home/mallozup/bin/tests.sh -f \".py\"\n\n"
-
-    opt.separator  "Options"
-
-    opt.on("-r","--repo REPO","which github repo you want to run test against " \
-                               "EXAMPLE: USER/REPO  MalloZup/gitbot") do |repo|
-      @options[:repo] = repo
-    end
-
-    opt.on("-c","--context CONTEXT","context to set on comment"\
-                                "EXAMPLE: CONTEXT: python-test") do |context|
-      @options[:context] = context
-    end
-
-    opt.on("-d","--description DESCRIPTION","description to set on comment"\
-                                            ) do |description|
-      @options[:description] = description
-    end
-
-    opt.on("-t","--test TEST.SH","fullpath to the bash script which contain test to be executed for pr") do |bash_file|
-      @options[:bash_file] = bash_file
-    end
-
-    opt.on("-f","--file \'.py\'", "specify the file type of the pr which you want to run the test against (ex .py, .java, .rb  etc)") do |file_type|
-      @options[:file_type] = file_type
-    end
-
-    opt.on("-h","--help","help") do
-      puts @opt_parser 
-      puts "***************************************************************\n"
-      exit 0
-    end
-  end
-  @opt_parser.parse!
-  raise_verbose_help('REPO') if @options[:repo].nil?
-  raise_verbose_help('CONTEXT') if @options[:context].nil?
-  raise_verbose_help('DESCRIPTION') if @options[:description].nil?
-  raise_verbose_help('TEST.sh') if @options[:bash_file].nil?
-  raise_verbose_help('TYPE FILE') if @options[:file_type].nil?
-end
 
 # this function merge the pr branch  into target branch,
 # where the author of pr wanted to submit
@@ -129,8 +78,9 @@ def create_comment(repo, pr, comment)
   @client.create_commit_comment(repo, pr, comment)
 end
 
-# get options
-parse_option
+
+
+@options = OptParser.get_options
 
 # git_dir is where we have the github repo in our machine
 @git_dir = "/tmp/#{@options[:repo].split('/')[1]}"
