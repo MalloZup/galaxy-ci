@@ -2,6 +2,7 @@
 
 require 'octokit'
 require 'optparse'
+require_relative "lib/opt_parser" 
 
 @options = {}
 def parse_option()
