@@ -1,7 +1,7 @@
 #! /usr/bin/ruby
 
 class GitOp
-
+  attr_reader :git_dir
   def initialize(git_dir)
     @git_dir = git_dir
   end
