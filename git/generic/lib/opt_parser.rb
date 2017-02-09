@@ -3,7 +3,11 @@
 # Opt_parser module, is for getting needed options
 
 module OptParser
+  # this is for testing 
+  class << self; attr_accessor :options; end
   @options = {}
+  @options = options.clone if options.any? == true
+  
   def OptParser.raise_verbose_help(msg)
     puts @opt_parser
     puts "************************************************\n"
@@ -15,7 +19,7 @@ module OptParser
     OptParser.raise_verbose_help('REPO') if @options[:repo].nil?
     OptParser.raise_verbose_help('CONTEXT') if @options[:context].nil?
     OptParser.raise_verbose_help('DESCRIPTION') if @options[:description].nil?
-    OptParser.raise_verbose_help('TEST.sh') if @options[:bash_file].nil?
+    OptParser.raise_verbose_help('SCRIPT FILE') if @options[:test_file].nil?
     OptParser.raise_verbose_help('TYPE FILE') if @options[:file_type].nil? 
   end
  
@@ -43,8 +47,8 @@ module OptParser
       end
 
       opt.on('-t', '--test TEST.SH', 'fullpath to the bash' \
-             'script which contain test to be executed for pr') do |bash_file|
-        @options[:bash_file] = bash_file
+             'script which contain test to be executed for pr') do |test_file|
+        @options[:test_file] = test_file
       end
       
       opt.on('-f', "--file \'.py\'", 'specify the file type of the pr which you want' \
