@@ -3,34 +3,7 @@
 require 'octokit'
 require 'optparse'
 require_relative "lib/opt_parser" 
-
-
-# this function merge the pr branch  into target branch,
-# where the author of pr wanted to submit
-def git_goto_prj_dir(repo)
-  # chech that dir exist, otherwise clone it
-  if File.directory?(@git_dir) == false
-    Dir.chdir '/tmp'
-    puts 'cloning the project in tmp'
-    `git clone git@github.com:#{repo}.git`
-  end
-  Dir.chdir @git_dir
-end
-
-# merge pr_branch into upstream targeted branch
-def git_merge_pr_totarget(upstream, pr_branch, repo)
-  git_goto_prj_dir(repo)
-  `git checkout #{upstream}`
-  `git fetch origin`
-  `git pull origin #{upstream}`
-  `git checkout -b PR-#{pr_branch} origin/#{pr_branch}`
-end
-
-# cleanup the pr_branch(delete it)
-def git_del_pr_branch(upstream, pr)
-  `git checkout #{upstream}`
-  `git branch -D  PR-#{pr}`
-end
+require_relative "lib/git_op" 
 
 # run bash script to validate.
 def run_bash(output)
@@ -42,15 +15,16 @@ end
 
 # main function for doing the test
 def pr_test(upstream, pr_sha_com, repo, pr_branch)
+  git = GitOp.new(@git_dir)
   # get author:
   pr_com = @client.commit(repo, pr_sha_com)
   author_pr = pr_com.author.login
   @comment = "##### files analyzed:\n #{@pr_files}\n"
   @comment << "@#{author_pr}\n```console\n"
   output = []
-  git_merge_pr_totarget(upstream, pr_branch, repo)
+  git.merge_pr_totarget(upstream, pr_branch, repo)
   run_bash(output)
-  git_del_pr_branch(upstream, pr_branch)
+  git.del_pr_branch(upstream, pr_branch)
   output.each { |out| @comment << out }
   @comment << " ```\n"
   @comment << "#{@compliment_msg}\n" if @j_status == 'success'
