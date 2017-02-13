@@ -4,15 +4,12 @@ require 'octokit'
 require 'optparse'
 require_relative 'lib/opt_parser'
 require_relative 'lib/git_op'
-require_relative 'lib/execute_test'
 # run bash script to validate.
 def run_bash
-  output = []
   out = `#{@test_file}`
   @j_status = 'failure' if $?.exitstatus.nonzero?
   @j_status = 'success' if $?.exitstatus.zero?
-  output.push(out) if $?.exitstatus.nonzero?
-  return output
+  puts out
 end
 
 # main function for doing the test
@@ -20,16 +17,11 @@ def pr_test(upstream, pr_sha_com, repo, pr_branch)
   git = GitOp.new(@git_dir)
   # get author:
   pr_com = @client.commit(repo, pr_sha_com)
-  author_pr = pr_com.author.login
+  _author_pr = pr_com.author.login
   @comment = "##### files analyzed:\n #{@pr_files}\n"
-  @comment << "@#{author_pr}\n```console\n"
   git.merge_pr_totarget(upstream, pr_branch, repo)
-  output = run_bash
-  puts output
+  run_bash
   git.del_pr_branch(upstream, pr_branch)
-  output.each { |out| @comment << out }
-  @comment << " ```\n"
-  @comment << "#{@compliment_msg}\n" if @j_status == 'success'
 end
 
 # this function check only the file of a commit (latest)
@@ -68,11 +60,9 @@ def launch_test_and_setup_status(repo, pr_head_sha, pr_head_ref, pr_base_ref)
   # create comment
   create_comment(repo, pr_head_sha, @comment)
 end
-
 # *********************************************
 
 @options = OptParser.get_options
-
 # git_dir is where we have the github repo in our machine
 @git_dir = "/tmp/#{@options[:repo].split('/')[1]}"
 @pr_files = []
@@ -84,7 +74,7 @@ repo = @options[:repo]
 f_not_exist_msg = "\'#{@test_file}\' doesn't exists.Enter valid file, -t option"
 raise f_not_exist_msg if File.file?(@test_file) == false
 @compliment_msg = "no failures found for #{@file_type} file type! Great job"
-# optional
+# optional, this url will be appended on github page.(usually a jenkins) 
 @target_url = 'https://JENKINS_URL:job/' \
              "MY_JOB/#{ENV['JOB_NUMBER']}"
 
@@ -102,6 +92,7 @@ prs.each do |pr|
   begin
     puts commit_state.statuses[0]['state']
   rescue NoMethodError
+    # in this situation we have no reviews-tests set at all.
     check_for_all_files(repo, pr.number, @file_type)
     if @pr_files.any? == false
       puts "no files of type #{@file_type} found! skipping"
@@ -112,15 +103,34 @@ prs.each do |pr|
     end
   end
   puts '*' * 30 + "\nPR is already reviewed by bot \n" + '*' * 30 + "\n"
-  if commit_state.statuses[0]['description'] != @description ||
-     commit_state.statuses[0]['state'] == 'success'
+  # we run the test in 2 conditions:
+  # 1) the description "pylint-test" is not set, so we are in a situation
+  # like we have already 3 tests runned against a pr, but not the current one.
+  # 2) is like 1 but is when something went wrong and the pending status
+  # was set, but the bot exited or was buggy, or unknown failures, we want to rerun the test.
+  # pending status is not a good status, so we should always have only ok or not ok.
+  # and repeat the test for the pending
 
+  #1) context_present == false make trigger the test, means we don't have tagged the PR with context
+  context_present = false
+  for pr_status in (0..commit_state.statuses.size - 1) do 
+    context_present = true if commit_state.statuses[pr_status]['context'] == @context
+  end
+  # 2) pending
+  pending_on_context = false
+  for pr_status in (0..commit_state.statuses.size - 1) do
+    if commit_state.statuses[pr_status]['context'] == @context &&
+       commit_state.statuses[pr_status]['state'] == 'pending'
+      pending_on_context = true
+    end
+  end
+  # check the conditions 1,2 and it they happens run_test
+  if context_present == false || pending_on_context == true
     check_for_all_files(repo, pr.number, @file_type)
     next if @pr_files.any? == false
     launch_test_and_setup_status(repo, pr.head.sha, pr.head.ref, pr.base.ref)
     break
   end
-  next if commit_state.statuses[0]['description'] == @description
 end
 # jenkins
 exit 1 if @j_status == 'failure'
