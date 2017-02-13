@@ -2,15 +2,17 @@
 
 require 'octokit'
 require 'optparse'
-require_relative "lib/opt_parser" 
-require_relative "lib/git_op" 
+require_relative 'lib/opt_parser'
+require_relative 'lib/git_op'
 
 # run bash script to validate.
-def run_bash(output)
-    out = `#{@test_file}`
-    @comment << out
-    @j_status = 'failure' if $?.exitstatus.nonzero?
-    output.push(out) if $?.exitstatus.nonzero?
+def run_bash
+  output = []
+  out = `#{@test_file}`
+  @j_status = 'failure' if $?.exitstatus.nonzero?
+  @j_status = 'success' if $?.exitstatus.zero?
+  output.push(out) if $?.exitstatus.nonzero?
+  return output
 end
 
 # main function for doing the test
@@ -21,9 +23,9 @@ def pr_test(upstream, pr_sha_com, repo, pr_branch)
   author_pr = pr_com.author.login
   @comment = "##### files analyzed:\n #{@pr_files}\n"
   @comment << "@#{author_pr}\n```console\n"
-  output = []
   git.merge_pr_totarget(upstream, pr_branch, repo)
-  run_bash(output)
+  output = run_bash
+  puts output
   git.del_pr_branch(upstream, pr_branch)
   output.each { |out| @comment << out }
   @comment << " ```\n"
@@ -55,12 +57,14 @@ end
 def launch_test_and_setup_status(repo, pr_head_sha, pr_head_ref, pr_base_ref)
   # pending
   @client.create_status(repo, pr_head_sha, 'pending',
-                        context: @context, description: @description, target_url: @target_url)
+                        context: @context, description: @description,
+                        target_url: @target_url)
   # do tests
   pr_test(pr_base_ref, pr_head_sha, repo, pr_head_ref)
   # set status
   @client.create_status(repo, pr_head_sha, @j_status,
-                        context: @context, description: @description, target_url: @target_url)
+                        context: @context, description: @description,
+                        target_url: @target_url)
   # create comment
   create_comment(repo, pr_head_sha, @comment)
 end
@@ -75,26 +79,22 @@ repo = @options[:repo]
 @context = @options[:context]
 @description = @options[:description]
 @test_file = @options[:test_file]
-raise "\'#{@test_file}\' doesn't exists. Enter valid file for -t option" if File.file?(@test_file) == false
+f_not_exist_msg = "\'#{@test_file}\' doesn't exists.Enter valid file, -t option"
+raise f_not_exist_msg if File.file?(@test_file) == false
 @compliment_msg = "no failures found for #{@file_type} file type! Great job"
-
-
-
 # optional
 @target_url = 'https://JENKINS_URL:job/' \
              "MY_JOB/#{ENV['JOB_NUMBER']}"
 
 @client = Octokit::Client.new(netrc: true)
-@j_status = 'success'
+@j_status = ''
 
 # fetch all PRS
 prs = @client.pull_requests(repo, state: 'open')
 # exit if repo has no prs"
-puts "no Pull request OPEN on the REPO!" if prs.any? == false
+puts 'no Pull request OPEN on the REPO!' if prs.any? == false
 prs.each do |pr|
-  puts '=================================='
-  puts("TITLE_PR: #{pr.title}, NR: #{pr.number}")
-  puts '=================================='
+  puts '=' * 30 + "\n" + "TITLE_PR: #{pr.title}, NR: #{pr.number}\n" + '=' * 30
   # this check the last commit state, catch for review or not reviewd status.
   commit_state = @client.status(repo, pr.head.sha)
   begin
@@ -104,15 +104,12 @@ prs.each do |pr|
     if @pr_files.any? == false
       puts "no files of type #{@file_type} found! skipping"
       next
-    end
-    if @pr_files.any? == true
+    else
       launch_test_and_setup_status(repo, pr.head.sha, pr.head.ref, pr.base.ref)
       break
     end
   end
-  puts '******************************'
-  puts 'PR is already reviewed by bot'
-  puts '******************************'
+  puts '*' * 30 + "\nPR is already reviewed by bot \n" + '*' * 30 + "\n"
   if commit_state.statuses[0]['description'] != @description ||
      commit_state.statuses[0]['state'] == 'pending'
 
