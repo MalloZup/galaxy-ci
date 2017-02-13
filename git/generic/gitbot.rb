@@ -4,7 +4,7 @@ require 'octokit'
 require 'optparse'
 require_relative 'lib/opt_parser'
 require_relative 'lib/git_op'
-
+require_relative 'lib/execute_test'
 # run bash script to validate.
 def run_bash
   output = []
@@ -69,6 +69,8 @@ def launch_test_and_setup_status(repo, pr_head_sha, pr_head_ref, pr_base_ref)
   create_comment(repo, pr_head_sha, @comment)
 end
 
+# *********************************************
+
 @options = OptParser.get_options
 
 # git_dir is where we have the github repo in our machine
@@ -111,7 +113,7 @@ prs.each do |pr|
   end
   puts '*' * 30 + "\nPR is already reviewed by bot \n" + '*' * 30 + "\n"
   if commit_state.statuses[0]['description'] != @description ||
-     commit_state.statuses[0]['state'] == 'pending'
+     commit_state.statuses[0]['state'] == 'success'
 
     check_for_all_files(repo, pr.number, @file_type)
     next if @pr_files.any? == false
