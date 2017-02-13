@@ -29,7 +29,7 @@ module OptParser
       opt.banner = "************************************************\n" \
         "Usage: gitbot [OPTIONS] \n" \
         "EXAMPLE: ======> #{name} -r MalloZup/galaxy-botkins -c \"python-test\" " \
-        "-d \"pyflakes_linttest\" -t /home/mallozup/bin/tests.sh -f \".py\"\n\n"
+        "-d \"pyflakes_linttest\" -t /tmp/tests-to-be-executed -f \".py\"\n\n"
       opt.separator 'Options'
 
       opt.on('-r', '--repo REPO', 'github repo you want to run test against' \

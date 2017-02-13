@@ -7,7 +7,7 @@ require_relative "lib/git_op"
 
 # run bash script to validate.
 def run_bash(output)
-    out = `sh #{@bash_file}`
+    out = `#{@test_file}`
     @comment << out
     @j_status = 'failure' if $?.exitstatus.nonzero?
     output.push(out) if $?.exitstatus.nonzero?
@@ -52,7 +52,18 @@ def create_comment(repo, pr, comment)
   @client.create_commit_comment(repo, pr, comment)
 end
 
-
+def launch_test_and_setup_status(repo, pr_head_sha, pr_head_ref, pr_base_ref)
+  # pending
+  @client.create_status(repo, pr_head_sha, 'pending',
+                        context: @context, description: @description, target_url: @target_url)
+  # do tests
+  pr_test(pr_base_ref, pr_head_sha, repo, pr_head_ref)
+  # set status
+  @client.create_status(repo, pr_head_sha, @j_status,
+                        context: @context, description: @description, target_url: @target_url)
+  # create comment
+  create_comment(repo, pr_head_sha, @comment)
+end
 
 @options = OptParser.get_options
 
@@ -61,10 +72,12 @@ end
 @pr_files = []
 @file_type = @options[:file_type]
 repo = @options[:repo]
-context = @options[:context]
-description = @options[:description]
-@bash_file = @options[:bash_file]
-@compliment_msg = "no failures found for #{@file_type}! Great job"
+@context = @options[:context]
+@description = @options[:description]
+@test_file = @options[:test_file]
+raise "\'#{@test_file}\' doesn't exists. Enter valid file for -t option" if File.file?(@test_file) == false
+@compliment_msg = "no failures found for #{@file_type} file type! Great job"
+
 
 
 # optional
@@ -88,38 +101,27 @@ prs.each do |pr|
     puts commit_state.statuses[0]['state']
   rescue NoMethodError
     check_for_all_files(repo, pr.number, @file_type)
-    next if @pr_files.any? == false
+    if @pr_files.any? == false
+      puts "no files of type #{@file_type} found! skipping"
+      next
+    end
     if @pr_files.any? == true
-      # pending
-      @client.create_status(repo, pr.head.sha, 'pending',
-                            context: context, description: description, target_url: @target_url)
-      # do tests
-      pr_test(pr.base.ref, pr.head.sha, repo, pr.head.ref)
-      # set status
-      @client.create_status(repo, pr.head.sha, @j_status,
-                            context: context, description: description, target_url: @target_url)
-      # create comment
-      create_comment(repo, pr.head.sha, @comment)
+      launch_test_and_setup_status(repo, pr.head.sha, pr.head.ref, pr.base.ref)
       break
     end
   end
   puts '******************************'
   puts 'PR is already reviewed by bot'
   puts '******************************'
-  if commit_state.statuses[0]['description'] != description ||
+  if commit_state.statuses[0]['description'] != @description ||
      commit_state.statuses[0]['state'] == 'pending'
 
     check_for_all_files(repo, pr.number, @file_type)
     next if @pr_files.any? == false
-    @client.create_status(repo, pr.head.sha, 'pending',
-                          context: context, description: description, target_url: @target_url)
-    pr_test(pr.base.ref, pr.head.sha, repo, pr.head.ref)
-    @client.create_status(repo, pr.head.sha, @j_status,
-                          context: context, description: description, target_url: @target_url)
-    create_comment(repo, pr.head.sha, @comment)
+    launch_test_and_setup_status(repo, pr.head.sha, pr.head.ref, pr.base.ref)
     break
   end
-  next if commit_state.statuses[0]['description'] == description
+  next if commit_state.statuses[0]['description'] == @description
 end
 # jenkins
 exit 1 if @j_status == 'failure'
