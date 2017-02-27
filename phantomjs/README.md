@@ -1,9 +1,12 @@
 # HOWTO:
 
+
+## 1) Install PhantomJS or SlimerJS, then:
+
+Then
 ```console
-Install PhantomJS or SlimerJS, then:
 
 
 npm install casperjs
-node_modules/casperjs/bin/casperjs selftest
+./run-casper.js
 ```
