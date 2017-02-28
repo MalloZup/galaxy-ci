@@ -1,19 +1,25 @@
 var casper = require('casper').create({   
     verbose: true, 
     logLevel: 'debug',
+     pageSettings: {
+		     loadImages:  false,        // The WebPage instance used by Casper will
+            	     loadPlugins: false,         // use these settings
+	             webSecurityEnabled: false
+	    }
 });
 
 casper.userAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.71 Safari/537.36");
 
 // print out all the messages in the headless browser context
 casper.on('remote.message', function(msg) {
-    this.echo('remote message caught: ' + msg);
+    this.echo('remote message caught: ');
+    console.log(msg);
 });
 
 casper.on('resource.error', function(msg) {
-    this.echo("g_____________________________________");
-    this.echo(msg.errorString);
-    this.echo("err code:" + msg.errorCode + " URL:"+ msg.url);
+    this.echo("RESOURCE_ERROR________________________________");
+    console.log(msg.errorString);
+    console.log("err code:" + msg.errorCode + " URL:"+ msg.url);
 });
 
 casper.on('resource.timeout', function(msg) {
@@ -42,7 +48,6 @@ casper.start(url, function() {
 });
 
 casper.thenEvaluate(function(){
-   console.log("======================================================");
    console.log("Page Title " + document.title);
    console.log("Your name is " + document.querySelector('.headerTinymanName').textContent ); 
    console.log("******** GOING TO LOAD MINION RMT PAGE");

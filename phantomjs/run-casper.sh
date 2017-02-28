@@ -1,3 +1,3 @@
 #! /bin/bash
 
-casperjs --ignore-ssl-errors=true  --web-security=false  --ssl-protocol=any casperjs.js
+casperjs --ignore-ssl-errors=true  --web-security=no  --ssl-protocol=any casperjs.js
