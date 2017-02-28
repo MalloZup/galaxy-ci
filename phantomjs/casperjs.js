@@ -1,11 +1,6 @@
 var casper = require('casper').create({   
     verbose: true, 
     logLevel: 'debug',
-     pageSettings: {
-		     loadImages:  false,        // The WebPage instance used by Casper will
-            	     loadPlugins: false,         // use these settings
-	             webSecurityEnabled: false
-	    }
 });
 
 casper.userAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.71 Safari/537.36");
