@@ -1,12 +1,9 @@
 var casper = require('casper').create({   
     verbose: true, 
     logLevel: 'debug',
-    pageSettings: {
-         loadImages:  true,         // The WebPage instance used by Casper will
-         loadPlugins: false,         // use these settings
-         userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_5) AppleWebKit/537.4 (KHTML, like Gecko) Chrome/22.0.1229.94 Safari/537.4'
-    }
 });
+
+casper.userAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.71 Safari/537.36");
 
 // print out all the messages in the headless browser context
 casper.on('remote.message', function(msg) {
@@ -16,11 +13,19 @@ casper.on('remote.message', function(msg) {
 casper.on('resource.error', function(msg) {
     this.echo("g_____________________________________");
     this.echo(msg.errorString);
-    this.echo(msg.id + " URL"+ msg.url);
+    this.echo("err code:" + msg.errorCode + " URL:"+ msg.url);
 });
+
+casper.on('resource.timeout', function(msg) {
+    this.echo("____RESOURCE_TIMEOUT___________");
+    this.echo(msg.errorString);
+    this.echo("err code:" + msg.errorCode + " URL:"+ msg.url);
+});
+
 // print out all the messages in the headless browser context
 casper.on("page.error", function(msg, trace) {
     this.echo("Page Error: " + msg, "ERROR");
+    this.echo("Page Error Trace: " + trace, "ERROR");
 });
 
 var url = 'https://headref-suma3pg.mgr.suse.de/rhn/Login.do';
@@ -44,9 +49,11 @@ casper.thenEvaluate(function(){
 });
 
 casper.thenOpen('https://headref-suma3pg.mgr.suse.de/rhn/manager/minions/cmd', function() {
-   this.capture('test.png')
-   console.log("******** MINION PAGE **********");
-   this.click("button[id='preview']")
-   });
+    casper.waitForText("Preview targets", function() {
+            console.log("******** MINION PAGE **********");
+            this.click("button[id='preview']")
+            this.capture('test.png')
+    });
+});
 
 casper.run();
