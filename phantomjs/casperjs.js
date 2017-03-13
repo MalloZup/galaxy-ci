@@ -2,7 +2,7 @@ var casper = require('casper').create({
     verbose: true, 
     logLevel: 'debug',
 });
-
+casper.options.waitTimeout = 20000;
 casper.userAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.71 Safari/537.36");
 
 // print out all the messages in the headless browser context
@@ -29,7 +29,7 @@ casper.on("page.error", function(msg, trace) {
     this.echo("Page Error Trace: " + trace, "ERROR");
 });
 
-var url = 'https://headref-suma3pg.mgr.suse.de/rhn/Login.do';
+var url = 'https://dma-suma3pg.tf.local/rhn/Login.do';
 
 casper.start(url, function() {
    console.log("page loaded");
@@ -48,11 +48,11 @@ casper.thenEvaluate(function(){
    console.log("******** GOING TO LOAD MINION RMT PAGE");
 });
 
-casper.thenOpen('https://headref-suma3pg.mgr.suse.de/rhn/manager/minions/cmd', function() {
-    casper.waitForText("Preview targets", function() {
+casper.thenOpen('https://dma-suma3pg.tf.local/rhn/manager/minions/cmd', function() {
+            this.capture('test.png')
+	    casper.waitForText("Preview targets", function() {
             console.log("******** MINION PAGE **********");
             this.click("button[id='preview']")
-            this.capture('test.png')
     });
 });
 
