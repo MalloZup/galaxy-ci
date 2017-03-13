@@ -48,12 +48,20 @@ casper.thenEvaluate(function(){
    console.log("******** GOING TO LOAD MINION RMT PAGE");
 });
 
-casper.thenOpen('https://dma-suma3pg.tf.local/rhn/manager/minions/cmd', function() {
-            this.capture('test.png')
-	    casper.waitForText("Preview targets", function() {
-            console.log("******** MINION PAGE **********");
-            this.click("button[id='preview']")
+// asper.thenOpen('https://dma-suma3pg.tf.local/rhn/manager/minions/cmd', function() {
+           //  this.capture('test.png')
+	//     casper.waitForText("Preview targets", function() {
+   //          console.log("******** MINION PAGE **********");
+ //            this.click("button[id='preview']")
+//    });
+// });
+casper.thenOpen('https://dma-suma3pg.tf.local/rhn/manager/cm/images', function() {
+            this.capture('docker.png')
     });
-});
+
+casper.thenOpen('https://dma-suma3pg.tf.local/rhn/manager/minions/bootstrap', function() {
+            this.capture('bootstrap.png')
+    });
+
 
 casper.run();
