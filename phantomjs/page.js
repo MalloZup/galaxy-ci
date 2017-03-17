@@ -55,10 +55,12 @@ casper.thenEvaluate(function(){
  //            this.click("button[id='preview']")
 //    });
 // });
-casper.thenOpen('https://dma-suma3pg.tf.local/rhn/manager/cm/build', function() {
-            this.capture('before.png')
-//  this.click('#submit-btn');
-            this.capture('after.png')
+casper.thenOpen('https://dma-suma3pg.tf.local/rhn/manager/cm/images', function() {
+            this.capture('docker.png')
+    });
+
+casper.thenOpen('https://dma-suma3pg.tf.local/rhn/manager/minions/bootstrap', function() {
+            this.capture('bootstrap.png')
     });
 
 
