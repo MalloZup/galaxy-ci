@@ -1,6 +1,7 @@
 #! /usr/bin/ruby
 
 require 'watir'
+# https://watir.com/examples/
 
 def click_each(links)
   links.each do |link|
