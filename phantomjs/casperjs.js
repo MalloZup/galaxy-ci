@@ -17,6 +17,15 @@ casper.on('resource.error', function(msg) {
     console.log("err code:" + msg.errorCode + " URL:"+ msg.url);
 });
 
+casper.on("page.initialized", function(page) {
+	    // CasperJS doesn't provide `onResourceTimeout`, so it must be set through 
+	    //     // the PhantomJS means. This is only possible when the page is initialized
+	             page.onResourceTimeout = function(request) {
+	                   console.log('Response Timeout (#' + request.id + '): ' + JSON.stringify(request));
+	                         };
+	                      });
+	    
+
 casper.on('resource.timeout', function(msg) {
     this.echo("____RESOURCE_TIMEOUT___________");
     this.echo(msg.errorString);
@@ -57,7 +66,7 @@ casper.thenEvaluate(function(){
 // });
 casper.thenOpen('https://dma-suma3pg.tf.local/rhn/manager/cm/build', function() {
             this.capture('before.png')
-//  this.click('#submit-btn');
+            this.click('#submit-btn');
             this.capture('after.png')
     });
 
